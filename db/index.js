@@ -18,7 +18,7 @@ async function getAllUsers() {
 async function getAllPosts() {
     try {
         const { rows } = await client.query(
-            `SELECT authorId, title, content, active
+            `SELECT *
             FROM posts;
         `);
     
@@ -53,12 +53,13 @@ async function createPost({
     content
   }) {
     try {
+        console.log("creating a couple posts...")
         const {rows:[post]} = await client.query(`
-        INSERT INTO posts(authorID, title, content)
+        INSERT INTO posts("authorId", title, content)
         VALUES ($1, $2, $3)
-        ON CONFLICT (authorID) DO NOTHING
         RETURNING *;
         `, [authorId, title, content]);
+        console.log("Finished a couple posts...")
         return post;
     } catch (error) {
       throw error;
@@ -68,7 +69,8 @@ async function createPost({
   async function getPostsByUser(userId) {
     try {
         const { rows } = client.query(`
-        SELECT * FROM posts
+        SELECT * 
+        FROM posts
         WHERE "authorId"=${ userId };
       `);
   
@@ -81,19 +83,17 @@ async function createPost({
   async function getUserById(userId) {
       try {
         console.log("Starting to get a user...")
-        const { rows: [user] } = client.query(`
-        SELECT id, username, name, location, posts FROM users
-        WHERE "authorId"=${ userId };
+        const { rows: [user] } = await client.query(`
+        SELECT id, username, name, location, active
+        FROM users
+        WHERE id=${ userId }
       `);
-      if (!rows.length) {
+      if (!user) {
           return null;
       }
-      delete user.password;
-      const samePosts = getPostsByUser(userId);
-      user.posts = samePosts;
+      user.posts = await getPostsByUser(userId);
       return user;
     } catch (error) {
-        console.log("Failed to get user.")
         console.error(error)
     }
     // first get the user (NOTE: Remember the query returns 
@@ -109,11 +109,7 @@ async function createPost({
     // return the user object
   }
 
-  async function updatePost(id, fields = {
-    title,
-    content,
-    active
-  }) {
+  async function updatePost(id, fields = {}) {
     const setString = Object.keys(fields).map(
         (key, index) => `"${ key }"=$${ index + 1 }`
       ).join(', ');
@@ -131,7 +127,7 @@ async function createPost({
         RETURNING *;
       `, Object.values(fields));
   
-      return user;
+      return post;
     } catch (error) {
       throw error;
     }
@@ -166,5 +162,10 @@ module.exports = {
     client,
     getAllUsers,
     createUser,
-    updateUser
+    updateUser,
+    createPost,
+    getUserById,
+    updatePost,
+    getAllPosts,
+    getPostsByUser
 }

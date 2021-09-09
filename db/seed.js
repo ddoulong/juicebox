@@ -2,7 +2,12 @@ const {
     client,
     getAllUsers,
     createUser,
-    updateUser
+    updateUser,
+    createPost,
+    getUserById,
+    updatePost,
+    getAllPosts,
+    getPostsByUser
 } = require('./index');
 
 async function createInitialUsers() {
@@ -10,9 +15,26 @@ async function createInitialUsers() {
     try {
         console.log("Starting to create users...");
 
-        await createUser({ username: 'albert', password: 'bertie99', name:"Al", location:"VA"});
-        await createUser({ username: 'sandra', password: '2sandy4me', name:"Sandy", location:"FL"});
-        await createUser({ username: 'glamgal', password: 'soglam', name:"Glam", location:"CA"});
+        await createUser({ 
+            username: 'albert', 
+            password: 'bertie99', 
+            name:"Al", 
+            location:"VA"
+        });
+        
+        await createUser({ 
+            username: 'sandra', 
+            password: '2sandy4me', 
+            name:"Sandy", 
+            location:"FL"
+        });
+
+        await createUser({ 
+            username: 'glamgal', 
+            password: 'soglam', 
+            name:"Glam", 
+            location:"CA"
+        });
 
         console.log("Finished creating users!");
     }   catch (error) {
@@ -44,8 +66,15 @@ async function createTables() {
                 id SERIAL PRIMARY KEY,
                 username varchar(255) UNIQUE NOT NULL,
                 password varchar(255) NOT NULL,
-                name VARCHAR(255) NOT NULL,
-                location VARCHAR(255) NOT NULL,
+                name varchar(255) NOT NULL,
+                location varchar(255) NOT NULL,
+                active BOOLEAN DEFAULT true
+            );
+            CREATE TABLE posts (
+                id SERIAL PRIMARY KEY,
+                "authorId" INTEGER REFERENCES users(id),
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
                 active BOOLEAN DEFAULT true
             );
         `);
@@ -57,25 +86,32 @@ async function createTables() {
     }
 }
 
-async function createTablePosts() {
+async function createInitialPosts() {
     try {
-        console.log("Starting to build posts...")
-        await client.query(`
-            CREATE TABLE posts (
-                id SERIAL PRIMARY KEY,
-                "authorId" INTEGER REFERENCES users(id) NOT NULL,
-                title VARCHAR(255) NOT NULL,
-                content TEXT NOT NULL,
-                active BOOLEAN DEFAULT true
-            );
-        `);
+      const [albert, sandra, glamgal] = await getAllUsers();
 
-        console.log("Finished building posts!")        
-    } catch (e) {
-        console.error("Error building posts!")
-        throw e;
+      await createPost({
+        authorId: albert.id,
+        title: "First Post",
+        content: "This is my first post. I hope I love writing blogs as much as I love writing them."
+      });
+
+      await createPost({
+        authorId: sandra.id,
+        title: "Sandra's Post",
+        content: "Sandy beaches are where I like to be."
+      });
+
+      await createPost({
+        authorId: glamgal.id,
+        title: "Glamgal's Post",
+        content: "Hello, all!"
+      });
+      console.log("Finished creating posts!");
+    } catch (error) {
+      throw error;
     }
-}
+  }
 
 async function rebuildDB() {
     try {
@@ -83,9 +119,10 @@ async function rebuildDB() {
 
         await dropTables();
         await createTables();
-        await createTablePosts();
         await createInitialUsers();
+        await createInitialPosts();
     } catch (e) {
+        console.log("Error during rebuildDB")
         throw(e);
     }
 }
@@ -96,7 +133,7 @@ async function testDB() {
 
         console.log("Calling getAllUsers")
         const users = await getAllUsers();
-        console.log("getAllUsers:", users);
+        console.log("Users:", users);
 
         console.log("Calling updateUser on users[0]")
         const updateUserResult = await updateUser(users[0].id, {
@@ -104,6 +141,21 @@ async function testDB() {
             location:"Lesterville, KY"
         });
         console.log("Result:", updateUserResult);
+
+        console.log("Calling getAllPosts");
+        const posts = await getAllPosts();
+        console.log("Result:", posts);
+
+        console.log("calling getUserById with 1");
+        const albert = await getUserById(1);
+        console.log("Result:", albert);
+
+        console.log("Calling updatePost on posts[0]")
+        const updatePostResult = await updatePost(posts[0].id, {
+            title: "New Title",
+            content: "Updated Content"
+        });
+        console.log("Result:", updatePostResult)
 
         console.log("Finished database tests!");
     } catch (e) {
