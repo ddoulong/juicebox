@@ -16,8 +16,11 @@ server.use((req, res, next) => {
   
     next();
   });
-console.log("me");
+
 server.use('/api', apiRouter);
+
+const { client } = require('./db');
+client.connect();
 
 server.listen(PORT, () => {
   console.log('The server is up on port', PORT)
