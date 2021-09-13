@@ -1,9 +1,12 @@
 const express = require('express');
 const usersRouter = express.Router();
 const { getAllUsers } = require('../db');
+const { createUser } = require('../db');
+const { getUserByUsername } = require('../db');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = process.env;
-const { createUser } = require('../db');
+
+
 
 usersRouter.use((req, res, next) => {
   console.log("A request is being made to /users");
