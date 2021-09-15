@@ -13,19 +13,21 @@ tagsRouter.get('/:tagName/posts', async (req, res, next) => {
   // read the tagName from the params
   const tagName = req.params.tagName;
   try {
-    
+
     // use our method to get posts by tag name from the db
     // send out an object to the client { posts: // the posts }
 
-    const tag = await getPostsByTagName(tagName);
-
+    const tempPosts = await getPostsByTagName(tagName);
+    const posts = tempPosts.filter(post =>  {
+      return post.active && req.user.id === post.author.id;
+    });
     // UPDATE GET /api/tags/:tagName/posts
     // You should now update this method to filter out any posts which are both inactive and not owned by the current user.
     // const posts = allPosts.filter(post => {
     //   return post.active || (req.user && post.author.id === req.user.id);
     // });
 
-    res.send(tag);
+    res.send(posts);
   } catch ({ name, message }) {
     next({ 
       name: 'TagError', 
