@@ -204,17 +204,7 @@ async function updatePost(postId, fields = {}) {
     throw error;
   }
 }
-async function getAllPosts() {
-  try {
-    const { rows } = await client.query(`
-      SELECT *
-      FROM posts;
-    `);
-    return rows;
-  } catch (error) {
-    throw error;
-  }
-}
+
 async function getPostsByUser(userId) {
   try {
     const { rows: postIds } = await client.query(`
